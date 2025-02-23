@@ -14,7 +14,7 @@ enum EntriesSortType: String {
     case hot
 }
 
-enum EntriesFilter: String {
+public enum EntriesFilter: String {
     case hour = "1"
     case twoHouers = "2"
     case threeHours = "3"
@@ -23,8 +23,23 @@ enum EntriesFilter: String {
     case day = "24"
 }
 
+struct EntriesRequestParameters {
+
+    let page: Int
+    let limit: Int
+    let category: String?
+    let bucket: String?
+    let multimedia: Bool
+    let sort: EntriesSortType
+    let filter: EntriesFilter
+
+    static func hot(filter: EntriesFilter) -> EntriesRequestParameters {
+        .init(page: 1, limit: 25, category: nil, bucket: nil, multimedia: true, sort: .hot, filter: filter)
+    }
+}
+
 enum Entries {
-    case fetchEntries(page: Int, limit: Int, category: String?, bucket: String?, multimedia: Bool, sort: EntriesSortType, filter: EntriesFilter)
+    case fetchEntries(params: EntriesRequestParameters)
     case sendNewEntries(body: EntryDataContent)
     case fetchSpecificEntries(entryId: Int)
     case editSpecificEntry(entryId: Int, newEntry: EntryDataContent)
@@ -63,7 +78,7 @@ extension Entries: RequestType {
         }
     }
 
-    var method: RequestMethods {
+    var method: RequestMethod {
         switch self {
         case .fetchEntries,
              .fetchSpecificEntries,
@@ -88,21 +103,15 @@ extension Entries: RequestType {
 
     var queryItems: [URLQueryItem] {
         switch self {
-        case .fetchEntries(let page,
-                           let limit,
-                           let category,
-                           let bucket,
-                           let multimedia,
-                           let sort,
-                           let filter):
+        case .fetchEntries(let params):
             return [
-                URLQueryItem(name: "page", value: page.description),
-                URLQueryItem(name: "limit", value: limit.description),
-                URLQueryItem(name: "category", value: category?.description),
-                URLQueryItem(name: "bucket", value: bucket?.description),
-                URLQueryItem(name: "multimedia", value: multimedia.description),
-                URLQueryItem(name: "sort", value: sort.rawValue),
-                URLQueryItem(name: "filter", value: filter.rawValue)
+                URLQueryItem(name: "page", value: params.page.description),
+                URLQueryItem(name: "limit", value: params.limit.description),
+                URLQueryItem(name: "category", value: params.category?.description),
+                URLQueryItem(name: "bucket", value: params.bucket?.description),
+                URLQueryItem(name: "multimedia", value: params.multimedia.description),
+                URLQueryItem(name: "sort", value: params.sort.rawValue),
+                URLQueryItem(name: "filter", value: params.filter.rawValue)
             ]
 
         case .fetchVotes(_, let page):
@@ -119,6 +128,10 @@ extension Entries: RequestType {
         }
     }
 
+    var header: [String : Any] {
+        return [:]
+    }
+
     var body: Data? {
         switch self {
         case .sendNewEntries(body: let body),
@@ -128,5 +141,9 @@ extension Entries: RequestType {
         default:
             return nil
         }
+    }
+
+    var responseType: (any Codable).Type {
+        return Entry.self as (any Codable).Type
     }
 }

@@ -9,16 +9,12 @@ import Foundation
 
 protocol RequestType {
     associatedtype BodyValue: Codable
+    associatedtype Response = Codable.Type
 
     var path: String { get }
-    var method: RequestMethods { get }
+    var method: RequestMethod { get }
     var queryItems: [URLQueryItem] { get }
-    var body: BodyValue { get }
-}
-
-enum RequestMethods: String {
-    case GET
-    case POST
-    case PUT
-    case DELETE
+    var header: [String: Any] { get }
+    var body: BodyValue? { get }
+    var responseType: Response.Type { get }
 }
